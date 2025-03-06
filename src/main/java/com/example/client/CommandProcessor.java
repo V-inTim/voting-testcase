@@ -1,8 +1,8 @@
 package com.example.client;
 
 import com.example.client.command.VoteCommand;
-import com.example.client.dto.Message;
 import com.example.client.exception.CommandException;
+import com.example.dto.Message;
 
 import java.util.Map;
 import java.util.Scanner;
@@ -18,10 +18,10 @@ public class CommandProcessor {
             "exit", this::performExit
     );
     private final Map<String, Function<String[], Message>> voteCommands = Map.of(
-            "create", VoteCommand::create,
-            "view", VoteCommand::view,
-            "vote", VoteCommand::vote,
-            "delete", VoteCommand::delete
+            "create", VoteCommand::create
+//            "view", VoteCommand::view,
+//            "vote", VoteCommand::vote,
+//            "delete", VoteCommand::delete
     );
 
 
@@ -38,15 +38,16 @@ public class CommandProcessor {
             String[] words = commandLine.split("\\s+");
             command = words[0];
 
-            if (serviceCommands.containsKey(command)){
+            if (!(client.checkLogin() || command.equals("login"))){
+                System.out.println("Пользователь не авторизован.");
+            } else if (serviceCommands.containsKey(command)){
                 serviceCommands.get(command).accept(words);
-                continue;
-            }
-            if (voteCommands.containsKey(command)){
+            } else if (voteCommands.containsKey(command)){
                 Message message = voteCommands.get(command).apply(words);
-                continue;
-            }
-            System.out.println(String.format("Команда %s не определена", command));
+                if (message != null)
+                    client.sendMessage(message);
+            } else
+                System.out.println(String.format("Команда %s не определена.", command));
         } while (!command.equals("exit"));
     }
 
