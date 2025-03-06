@@ -1,8 +1,9 @@
 package com.example.server;
 
 
-import com.example.client.handler.TcpClientHandler;
+import com.example.server.handler.TcpServerHandler;
 import io.netty.bootstrap.ServerBootstrap;
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.EventLoopGroup;
@@ -16,6 +17,7 @@ import java.nio.charset.StandardCharsets;
 
 public class VotingTcpServer {
     private final int port;
+    private Channel channel;
 
     public VotingTcpServer(int port) {
         this.port = port;
@@ -36,12 +38,13 @@ public class VotingTcpServer {
                                     // new LineBasedFrameDecoder(1024), // Разделение по строкам
                                     new StringDecoder(StandardCharsets.UTF_8),
                                     new StringEncoder(StandardCharsets.UTF_8),
-                                    new TcpClientHandler()
+                                    new TcpServerHandler()
                             );
                         }
                     });
 
             ChannelFuture future = bootstrap.bind(port).sync();
+            channel = future.channel();
             System.out.println("Server started on port " + port);
             future.channel().closeFuture().sync();
         } finally {
@@ -49,12 +52,8 @@ public class VotingTcpServer {
             workerGroup.shutdownGracefully();
         }
     }
-
-    public static void run() {
-        try {
-            new VotingTcpServer(8080).start();
-        } catch (InterruptedException e) {
-            System.out.println("При запуске сервера что-то пошло нет так");
-        }
+    public void close(){
+        channel.close();
     }
+
 }
