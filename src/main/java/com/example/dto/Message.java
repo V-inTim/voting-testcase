@@ -17,6 +17,9 @@ import lombok.NoArgsConstructor;
         @JsonSubTypes.Type(value = CreateVoteMessage.class, name = "create vote"),
         @JsonSubTypes.Type(value = UsernameMessage.class, name = "username"),
         @JsonSubTypes.Type(value = ReplyMessage.class, name = "response"),
+        @JsonSubTypes.Type(value = ViewMessage.class, name = "view"),
+        @JsonSubTypes.Type(value = ViewTopicMessage.class, name = "view topic"),
+        @JsonSubTypes.Type(value = ViewVoteMessage.class, name = "view vote"),
 })
 @AllArgsConstructor
 @NoArgsConstructor
