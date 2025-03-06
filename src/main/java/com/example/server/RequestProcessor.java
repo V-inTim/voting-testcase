@@ -20,7 +20,8 @@ public class RequestProcessor {
             "create vote", this::createVote,
             "view", this::view,
             "view topic", this::viewTopic,
-            "view vote", this::viewVote
+            "view vote", this::viewVote,
+            "delete", this::delete
     );
 
     public RequestProcessor() {
@@ -39,7 +40,7 @@ public class RequestProcessor {
         CreateTopicMessage message = (CreateTopicMessage) msg;
 
         try {
-            storage.createTopic(message.getTopic());
+            storage.createTopic(message.getTopic(), username);
         } catch (VoteException e) {
             return new ReplyMessage(e.getMessage());
         }
@@ -51,7 +52,8 @@ public class RequestProcessor {
         CreateVoteMessage message = (CreateVoteMessage) msg;
 
         try {
-            storage.createVote(message.getTopic(), message.getVote(), message.getTheme(), message.getAnswers());
+            storage.createVote(message.getTopic(), message.getVote(), message.getTheme(),
+                    message.getAnswers(), username);
         } catch (VoteException e) {
             return new ReplyMessage(e.getMessage());
         }
@@ -88,5 +90,39 @@ public class RequestProcessor {
         }
         logger.info("Get vote.");
         return new ReplyMessage(result);
+    }
+
+    private Message delete(Message msg){
+        DeleteMessage message = (DeleteMessage) msg;
+        try {
+            storage.delete(message.getTopic(), message.getVote(), username);
+        } catch (VoteException e) {
+            return new ReplyMessage(e.getMessage());
+        }
+        logger.info("Delete vote.");
+        return new ReplyMessage("Голосование удалено.");
+    }
+
+    private Message getVote(Message msg){
+        PreviewMessage message = (PreviewMessage) msg;
+        String result;
+        try {
+            result = storage.getVote(message.getTopic(), message.getVote());
+        } catch (VoteException e) {
+            return new ReplyMessage(e.getMessage());
+        }
+        logger.info("Get vote.");
+        return new ReplyMessage(result);
+    }
+
+    private Message vote(Message msg){
+        DeleteMessage message = (DeleteMessage) msg;
+        try {
+            storage.delete(message.getTopic(), message.getVote(), username);
+        } catch (VoteException e) {
+            return new ReplyMessage(e.getMessage());
+        }
+        logger.info("Voice wrote.");
+        return new ReplyMessage("Голос записан.");
     }
 }
