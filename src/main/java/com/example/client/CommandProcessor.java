@@ -18,8 +18,8 @@ public class CommandProcessor {
             "exit", this::performExit
     );
     private final Map<String, Function<String[], Message>> voteCommands = Map.of(
-            "create", VoteCommand::create
-//            "view", VoteCommand::view,
+            "create", VoteCommand::create,
+            "view", VoteCommand::view
 //            "vote", VoteCommand::vote,
 //            "delete", VoteCommand::delete
     );

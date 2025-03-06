@@ -1,6 +1,7 @@
 package com.example.server;
 
 import com.example.server.entity.Topic;
+import com.example.server.entity.Vote;
 import com.example.server.exception.VoteException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -54,15 +55,56 @@ public class Storage {
 //    public void deleteVote(String topic, String vote){
 //
 //    }
-//    public void getTopics(){
-//
-//    }
-//    public void getTopic(String topic){
-//
-//    }
-//    public void getVote(String topic){
-//
-//    }
+    public String getTopics(){
+        StringBuilder result = new StringBuilder();
+        result.append("TOPICS\n");
+        if (topics.isEmpty()) result.append("пусто");
+        for (Topic topic: topics) {
+            result.append(String.format("TOPIC   %s \n", topic.getName()));
+            if (topic.getVotes().isEmpty()) result.append("пусто");
+            for (Vote vote : topic.getVotes()) {
+                result.append(String.format("vote   %s \n", vote.getName()));
+            }
+        }
+        return result.toString().trim();
+    }
+
+    public String getTopic(String topic) throws VoteException {
+        StringBuilder result = new StringBuilder();
+        Topic topicObj = topics.stream()
+                .filter(t -> t.getName().equals(topic))
+                .findFirst()
+                .orElse(null);
+        if (topicObj == null)
+            throw new VoteException("Такого topic нет.");
+
+        result.append(String.format("TOPIC   %s \n", topicObj.getName()));
+        if (topicObj.getVotes().isEmpty()) result.append("пусто");
+        for (Vote vote : topicObj.getVotes())
+            result.append(String.format("vote   %s \n", vote.getName()));
+        return result.toString().trim();
+    }
+
+    public String getVote(String topic, String vote) throws VoteException {
+        Topic topicObj = topics.stream()
+                .filter(t -> t.getName().equals(topic))
+                .findFirst()
+                .orElse(null);
+        if (topicObj == null)
+            throw new VoteException("Такого topic нет.");
+        Vote voteObj = topicObj.getVotes().stream()
+                .filter(v -> v.getName().equals(vote))
+                .findFirst()
+                .orElse(null);
+        if (voteObj == null)
+            throw new VoteException("Такого vote нет.");
+
+        StringBuilder result = new StringBuilder();
+        result.append(String.format("VOTE  %s \n", voteObj.getName()));
+        for (String ans : voteObj.getAnswers().keySet())
+            result.append(String.format(" %s  - %d\n", ans, voteObj.getAnswers().get(ans)));
+        return result.toString().trim();
+    }
 //    public void vote(String topic, String vote, String username){
 //
 //    }

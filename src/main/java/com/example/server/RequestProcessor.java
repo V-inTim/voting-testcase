@@ -1,9 +1,6 @@
 package com.example.server;
 
-import com.example.dto.CreateTopicMessage;
-import com.example.dto.CreateVoteMessage;
-import com.example.dto.Message;
-import com.example.dto.ReplyMessage;
+import com.example.dto.*;
 import com.example.server.exception.VoteException;
 import lombok.Setter;
 import org.apache.logging.log4j.LogManager;
@@ -20,7 +17,10 @@ public class RequestProcessor {
 
     private final Map<String, Function<Message, Message>> voteCommands = Map.of(
             "create topic", this::createTopic,
-            "create vote", this::createVote
+            "create vote", this::createVote,
+            "view", this::view,
+            "view topic", this::viewTopic,
+            "view vote", this::viewVote
     );
 
     public RequestProcessor() {
@@ -41,7 +41,6 @@ public class RequestProcessor {
         try {
             storage.createTopic(message.getTopic());
         } catch (VoteException e) {
-            logger.warn(e.getMessage());
             return new ReplyMessage(e.getMessage());
         }
         logger.info("Topic created.");
@@ -54,10 +53,40 @@ public class RequestProcessor {
         try {
             storage.createVote(message.getTopic(), message.getVote(), message.getTheme(), message.getAnswers());
         } catch (VoteException e) {
-            logger.warn(e.getMessage());
             return new ReplyMessage(e.getMessage());
         }
         logger.info("Vote created.");
         return new ReplyMessage("Vote создан.");
+    }
+
+    private Message view(Message msg){
+        ViewMessage message = (ViewMessage) msg;
+        String result = storage.getTopics();
+        logger.info("Get topics.");
+        return new ReplyMessage(result);
+    }
+
+    private Message viewTopic(Message msg){
+        ViewTopicMessage message = (ViewTopicMessage) msg;
+        String result;
+        try {
+            result = storage.getTopic(message.getTopic());
+        } catch (VoteException e) {
+            return new ReplyMessage(e.getMessage());
+        }
+        logger.info("Get topic.");
+        return new ReplyMessage(result);
+    }
+
+    private Message viewVote(Message msg){
+        ViewVoteMessage message = (ViewVoteMessage) msg;
+        String result;
+        try {
+            result = storage.getVote(message.getTopic(), message.getVote());
+        } catch (VoteException e) {
+            return new ReplyMessage(e.getMessage());
+        }
+        logger.info("Get vote.");
+        return new ReplyMessage(result);
     }
 }

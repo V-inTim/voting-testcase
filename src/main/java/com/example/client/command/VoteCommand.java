@@ -1,9 +1,6 @@
 package com.example.client.command;
 
-import com.example.client.exception.CommandException;
-import com.example.dto.CreateTopicMessage;
-import com.example.dto.CreateVoteMessage;
-import com.example.dto.Message;
+import com.example.dto.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -11,11 +8,8 @@ import java.util.Scanner;
 
 public class VoteCommand {
     public static Message create(String[] args) {
-        try {
-            if (args.length != 3)
-                throw new CommandException("Не подходящее количество аргументов.");
+        if (args.length == 3){
             String subcommand = args[1];
-
             if (subcommand.equals("topic") && args[2].startsWith("-n=")) {
                 String topic = args[2].substring(3);
                 return new CreateTopicMessage(topic);
@@ -24,15 +18,29 @@ public class VoteCommand {
                 String topic = args[2].substring(3);
                 return createVote(topic);
             }
-            throw new CommandException("Неправильная форма команды create.");
-        } catch (CommandException e){
-            System.out.println(e.getMessage());
-            return null;
         }
+        System.out.println("Неправильная форма команды create.");
+        return null;
     }
-//    public static Message view(String[] args) {
-//        return new Message();
-//    }
+
+    public static Message view(String[] args) {
+        if (args.length == 1)
+            return new ViewMessage();
+
+        String subcommand = args[1];
+
+        if (args.length == 2 && args[1].startsWith("-t=")) {
+            String topic = args[1].substring(3);
+            return new ViewTopicMessage(topic);
+        }
+        if (args.length == 3 && args[1].startsWith("-t=") && args[2].startsWith("-v=")) {
+            String topic = args[1].substring(3);
+            String vote = args[2].substring(3);
+            return new ViewVoteMessage(topic, vote);
+        }
+        System.out.println("Неправильная форма команды view.");
+        return null;
+    }
 //    public static Message vote(String[] args) {
 //        return new Message();
 //    }
