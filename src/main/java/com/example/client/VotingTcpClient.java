@@ -1,6 +1,8 @@
 package com.example.client;
 
-import com.example.client.dto.Message;
+import com.example.client.handler.TcpClientHandler;
+import com.example.dto.Message;
+import com.example.dto.UsernameMessage;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.netty.bootstrap.Bootstrap;
@@ -20,6 +22,8 @@ public class VotingTcpClient {
     private final int port;
     private Channel channel;
     private String username;
+
+    private final ObjectMapper objectMapper = new ObjectMapper();;
 
 
 
@@ -41,7 +45,8 @@ public class VotingTcpClient {
                         protected void initChannel(Channel channel) throws Exception {
                             channel.pipeline().addLast(
                                     new StringDecoder(StandardCharsets.UTF_8),
-                                    new StringEncoder(StandardCharsets.UTF_8));
+                                    new StringEncoder(StandardCharsets.UTF_8),
+                                    new TcpClientHandler());
                         }
                     });
 
@@ -49,8 +54,8 @@ public class VotingTcpClient {
             System.out.println("клиент запущен");
 
             channel = future.channel();
-            Message message = new Message();
-            ObjectMapper objectMapper = new ObjectMapper();
+
+            Message message = new UsernameMessage(username);
             channel.writeAndFlush(objectMapper.writeValueAsString(message));
 
             future.channel().closeFuture().sync();
@@ -62,12 +67,18 @@ public class VotingTcpClient {
 
     }
 
-    public void sendMessage(String jsonMessage){
+    public void sendMessage(Message message){
+        String jsonMessage = null;
+        try {
+            jsonMessage = objectMapper.writeValueAsString(message);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
         channel.writeAndFlush(jsonMessage);
     }
 
     public void disconnect(){
-        channel.disconnect();
+        channel.close();
     }
 
     public boolean checkLogin(){
