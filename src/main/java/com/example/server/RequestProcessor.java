@@ -6,6 +6,7 @@ import lombok.Setter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -21,7 +22,9 @@ public class RequestProcessor {
             "view", this::view,
             "view topic", this::viewTopic,
             "view vote", this::viewVote,
-            "delete", this::delete
+            "delete", this::delete,
+            "preview", this::preview,
+            "vote", this::vote
     );
 
     public RequestProcessor() {
@@ -103,22 +106,23 @@ public class RequestProcessor {
         return new ReplyMessage("Голосование удалено.");
     }
 
-    private Message getVote(Message msg){
+    private Message preview(Message msg){
         PreviewMessage message = (PreviewMessage) msg;
-        String result;
+        List<String> result;
         try {
-            result = storage.getVote(message.getTopic(), message.getVote());
+            result = storage.preview(message.getTopic(), message.getVote());
         } catch (VoteException e) {
-            return new ReplyMessage(e.getMessage());
+            return new ReplyPreviewMessage(e.getMessage(), message.getTopic(), message.getVote(), null);
         }
-        logger.info("Get vote.");
-        return new ReplyMessage(result);
+        logger.info("Preview vote.");
+        return new ReplyPreviewMessage("Голосование. Выберите вариант",
+                message.getTopic(), message.getVote(), result);
     }
 
     private Message vote(Message msg){
-        DeleteMessage message = (DeleteMessage) msg;
+        VoteMessage message = (VoteMessage) msg;
         try {
-            storage.delete(message.getTopic(), message.getVote(), username);
+            storage.vote(message.getTopic(), message.getVote(), message.getAnswer());
         } catch (VoteException e) {
             return new ReplyMessage(e.getMessage());
         }

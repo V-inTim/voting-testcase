@@ -41,16 +41,24 @@ public class VoteCommand {
         System.out.println("Неправильная форма команды view.");
         return null;
     }
-//    public static Message vote(String[] args) {
-//        return new Message();
-//    }
+
+    public static Message vote(String[] args) {
+        if (args.length == 3 && args[1].startsWith("-t=") && args[2].startsWith("-v=")) {
+            String topic = args[1].substring(3);
+            String vote = args[2].substring(3);
+            return new PreviewMessage(topic, vote);
+        }
+        System.out.println("Неправильная форма команды vote.");
+        return null;
+    }
+
     public static Message delete(String[] args) {
         if (args.length == 3 && args[1].startsWith("-t=") && args[2].startsWith("-v=")) {
             String topic = args[1].substring(3);
             String vote = args[2].substring(3);
             return new DeleteMessage(topic, vote);
         }
-        System.out.println("Неправильная форма команды view.");
+        System.out.println("Неправильная форма команды delete.");
         return null;
     }
 

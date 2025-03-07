@@ -6,6 +6,7 @@ import com.example.server.exception.VoteException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -127,6 +128,23 @@ public class Storage {
         for (String ans : voteObj.getAnswers().keySet())
             result.append(String.format(" %s  - %d\n", ans, voteObj.getAnswers().get(ans)));
         return result.toString().trim();
+    }
+
+    public List<String> preview(String topic, String vote) throws VoteException {
+        Topic topicObj = topics.stream()
+                .filter(t -> t.getName().equals(topic))
+                .findFirst()
+                .orElse(null);
+        if (topicObj == null)
+            throw new VoteException("Такого topic нет.");
+        Vote voteObj = topicObj.getVotes().stream()
+                .filter(v -> v.getName().equals(vote))
+                .findFirst()
+                .orElse(null);
+        if (voteObj == null)
+            throw new VoteException("Такого vote нет.");
+
+        return new ArrayList<>(voteObj.getAnswers().keySet());
     }
 
 

@@ -3,7 +3,12 @@ package com.example.client;
 import com.example.client.command.VoteCommand;
 import com.example.client.exception.CommandException;
 import com.example.dto.Message;
+import com.example.dto.ReplyPreviewMessage;
+import com.example.dto.VoteMessage;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 import java.util.function.Consumer;
@@ -11,7 +16,9 @@ import java.util.function.Function;
 
 public class CommandProcessor {
     private VotingTcpClient client;
-    Thread clientThread;
+    private Thread clientThread;
+    private final Scanner scanner = new Scanner(System.in);
+    private volatile Boolean isBlocking;
 
     private final Map<String, Consumer<String[]>> serviceCommands = Map.of(
             "login", this::login,
@@ -20,35 +27,53 @@ public class CommandProcessor {
     private final Map<String, Function<String[], Message>> voteCommands = Map.of(
             "create", VoteCommand::create,
             "view", VoteCommand::view,
-//            "vote", VoteCommand::vote,
+            "vote", VoteCommand::vote,
             "delete", VoteCommand::delete
     );
 
 
     public CommandProcessor(VotingTcpClient client) {
         this.client = client;
+        this.isBlocking = false;
     }
 
     public void run() {
-        Scanner scanner = new Scanner(System.in);
-        String command, commandLine;
+        String command = "", commandLine;
 
         do {
-            commandLine = scanner.nextLine();
-            String[] words = commandLine.split("\\s+");
-            command = words[0];
+            if(!isBlocking) {
+                commandLine = scanner.nextLine();
+                String[] words = commandLine.split("\\s+");
+                command = words[0];
 
-            if (!(client.checkLogin() || command.equals("login"))){
-                System.out.println("Пользователь не авторизован.");
-            } else if (serviceCommands.containsKey(command)){
-                serviceCommands.get(command).accept(words);
-            } else if (voteCommands.containsKey(command)){
-                Message message = voteCommands.get(command).apply(words);
-                if (message != null)
-                    client.sendMessage(message);
-            } else
-                System.out.println(String.format("Команда %s не определена.", command));
+                if (!(client.checkLogin() || command.equals("login"))) {
+                    System.out.println("Пользователь не авторизован.");
+                } else if (serviceCommands.containsKey(command) || voteCommands.containsKey(command)) {
+                    process(command, words);
+                } else
+                    System.out.println(String.format("Команда %s не определена.", command));
+            }
         } while (!command.equals("exit"));
+    }
+
+    private void process(String command, String[] words){
+        if (serviceCommands.containsKey(command)){
+            serviceCommands.get(command).accept(words);
+        } else {
+            Message message = voteCommands.get(command).apply(words);
+            if (message == null)
+                return;
+            if (command.equals("vote")){
+                isBlocking = true;
+                client.sendMessageAsync(message).thenAccept(this::vote).exceptionally(e -> {
+                    System.out.println("Ошибка при запросе: " + e.getMessage());
+                    isBlocking = false;
+                    return null;
+                });
+            } else {
+                client.sendMessage(message);
+            }
+        }
     }
 
     private void login(String[] args) {
@@ -74,6 +99,37 @@ public class CommandProcessor {
             }
         });
         clientThread.start();
+    }
+    private void vote(String msg){
+        ObjectMapper objectMapper = new ObjectMapper();
+        ReplyPreviewMessage replyMessage;
+        try {
+            replyMessage = objectMapper.readValue(msg, ReplyPreviewMessage.class);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+        List<String> answers = replyMessage.getAnswers();
+        if (answers == null)
+            return;
+
+        for (int i = 0; i < answers.size(); i++)
+            System.out.printf("%d  %s\n", i + 1, answers.get(i));
+        int a;
+        try {
+            a = Integer.parseInt(scanner.nextLine());
+            isBlocking = false;
+            if (a < 1 || a > answers.size())
+                throw new CommandException();
+        } catch (NumberFormatException e) {
+            System.out.println("Некорректное численное значение. Попробуйте начать заново.");
+            return;
+        } catch (CommandException e){
+            System.out.println("Число не относится к голосованию. Попробуйте начать заново.");
+            return;
+        }
+        System.out.printf("Выбран вариант: %d\n", a);
+        VoteMessage voteMessage = new VoteMessage(replyMessage.getTopic(), replyMessage.getVote(), answers.get(a - 1));
+        client.sendMessage(voteMessage);
     }
 
     private void performExit(String[] args) {
