@@ -16,6 +16,7 @@ public class ServerApp {
         serverThread.start();
 
         CommandProcessor commandProcessor = new CommandProcessor(server, serverThread);
+        commandProcessor.run();
 
     }
 }
