@@ -129,6 +129,7 @@ public class Storage {
 
         StringBuilder result = new StringBuilder();
         result.append(String.format("VOTE  %s \n", voteObj.getName()));
+        result.append(String.format("theme  %s \n", voteObj.getTheme()));
         for (String ans : voteObj.getAnswers().keySet())
             result.append(String.format(" %s  - %d\n", ans, voteObj.getAnswers().get(ans)));
         return result.toString().trim();
