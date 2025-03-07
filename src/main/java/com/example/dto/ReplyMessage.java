@@ -12,4 +12,8 @@ public class ReplyMessage extends Message {
         super("response");
         this.response = response;
     }
+    public ReplyMessage(String type, String response) {
+        super(type);
+        this.response = response;
+    }
 }
