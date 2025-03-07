@@ -129,4 +129,7 @@ public class RequestProcessor {
         logger.info("Voice wrote.");
         return new ReplyMessage("Голос записан.");
     }
+
+    public void setStorage(Storage storage) {
+    }
 }

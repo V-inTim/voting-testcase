@@ -53,8 +53,8 @@ public class Storage {
                 .findFirst()
                 .orElse(null);
         if (topicObj == null){
-            logger.warn("Such topic is not exist for create.");
-            throw new VoteException("Такого topic нет.");
+            logger.warn("Such vote is not exist for create.");
+            throw new VoteException("Такого vote нет.");
         }
         topicObj.addVote(username, vote, theme, answers); // #fixme вывод имени
     }
