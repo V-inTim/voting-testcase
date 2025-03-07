@@ -16,6 +16,7 @@ import io.netty.handler.codec.string.StringDecoder;
 import io.netty.handler.codec.string.StringEncoder;
 
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.CompletableFuture;
 
 public class VotingTcpClient {
     private final String host;
@@ -24,8 +25,6 @@ public class VotingTcpClient {
     private String username;
 
     private final ObjectMapper objectMapper = new ObjectMapper();;
-
-
 
     public VotingTcpClient(String host, int port) {
         this.host = host;
@@ -75,6 +74,24 @@ public class VotingTcpClient {
             throw new RuntimeException(e);
         }
         channel.writeAndFlush(jsonMessage);
+    }
+
+    public CompletableFuture<String> sendMessageAsync(Message message) {
+        CompletableFuture<String> future = new CompletableFuture<>();
+        try {
+            String jsonMessage = objectMapper.writeValueAsString(message);
+            channel.writeAndFlush(jsonMessage).addListener(f -> {
+                if (!f.isSuccess()) {
+                    future.completeExceptionally(f.cause());
+                }
+            });
+
+            TcpClientHandler.setResponseCallback(future::complete);
+            System.out.println("установлено");// Устанавливаем обработчик ответа
+        } catch (JsonProcessingException e) {
+            future.completeExceptionally(e);
+        }
+        return future;
     }
 
     public void disconnect(){

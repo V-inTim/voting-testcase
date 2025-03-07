@@ -6,9 +6,14 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
+import lombok.Setter;
+
+import java.util.function.Consumer;
 
 public class TcpClientHandler extends SimpleChannelInboundHandler<String> {
     private static final ObjectMapper objectMapper = new ObjectMapper();
+    @Setter
+    private static Consumer<String> responseCallback;
 
 
     @Override
@@ -23,7 +28,10 @@ public class TcpClientHandler extends SimpleChannelInboundHandler<String> {
         }
         ReplyMessage replyMessage = (ReplyMessage) message;
         System.out.println(replyMessage.getResponse());
-        // Message response = responseProcessor.process(message);
+        if (responseCallback != null && replyMessage.getType().equals("preview response")) {
+            responseCallback.accept(msg);
+            responseCallback = null; // Сбрасываем после вызова
+        }
     }
 
 }
