@@ -3,9 +3,13 @@ package com.example.server;
 import com.example.server.entity.Topic;
 import com.example.server.entity.Vote;
 import com.example.server.exception.VoteException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.type.TypeFactory;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -163,5 +167,17 @@ public class Storage {
             throw new VoteException("Такого vote нет.");
 
         voteObj.getAnswers().put(answer, voteObj.getAnswers().get(answer) + 1);
+    }
+
+    public void saveTopicsToJson(String filePath) throws IOException {
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.writeValue(new File(filePath), topics);
+        logger.info("Topic saved to json.");
+    }
+    public void loadTopicsFromJson(String filePath) throws IOException {
+        ObjectMapper objectMapper = new ObjectMapper();
+        this.topics = objectMapper.readValue(new File(filePath),
+                TypeFactory.defaultInstance().constructCollectionType(List.class, Topic.class) );
+        logger.info("Topic loaded from json.");
     }
 }
